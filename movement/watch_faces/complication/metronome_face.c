@@ -24,8 +24,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "metronome_face.h"
 #include "watch.h"
+
+#define METRONOME_TICK_FREQUENCY 64
 
 void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
     (void) settings;
@@ -36,17 +39,25 @@ void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_inde
     }
 }
 
+static uint8_t _calculate_beat_tick(metronome_face_state_t *state) {
+    return (uint8_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60)));
+}
+
 void metronome_face_activate(movement_settings_t *settings, void *context) {
     (void) settings;
     metronome_face_state_t *state = (metronome_face_state_t *)context;
     state->bpm = 120;
-	state->active = false;
+    state->ticks = 1;
+    state->beat_tick = _calculate_beat_tick(state);
+    state->active = false;
 }
+
 
 static void _metronome_face_update_lcd(metronome_face_state_t *state) {
     char buf[11];
-    const char colors[][7] = {" red  ", " Green", " Yello"};
-    sprintf(buf, "BL %s", colors[state->color]);
+    //const char colors[][7] = {" red  ", " Green", " Yello"};
+    //sprintf(buf, "BL %s", colors[state->color]);
+    sprintf(buf, "--  %i", state->bpm);
     watch_display_string(buf, 0);
 }
 
@@ -59,36 +70,42 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
             _metronome_face_update_lcd(state);
             break;
         case EVENT_LIGHT_BUTTON_DOWN:
-            if (!state->active) {
-                state->color = (state->color + 1) % 3;
-                _metronome_face_update_lcd(state);
-            }
+            state->bpm--;
+            state->beat_tick = _calculate_beat_tick(state);
+            _metronome_face_update_lcd(state);
             break;
         case EVENT_ALARM_BUTTON_UP:
-            if (!state->active) {
-                state->active = true;
-                watch_clear_display();
-                movement_request_tick_frequency(1);            
-            } else {
-                state->active = false;
-                watch_set_led_off();
-                _metronome_face_update_lcd(state);
-            }
+            state->bpm++;
+            state->beat_tick = _calculate_beat_tick(state);
+            _metronome_face_update_lcd(state);
             break;
         case EVENT_ALARM_LONG_PRESS:
             if (!state->active) {
+                state->active = true;
+                movement_request_tick_frequency(METRONOME_TICK_FREQUENCY); 
+                _metronome_face_update_lcd(state);
+            } else {
+                state->active = false;
+                //watch_set_led_off();
                 _metronome_face_update_lcd(state);
             }
+
             break;
         case EVENT_TICK:
             if (state->active) {
-                watch_buzzer_play_note(BUZZER_NOTE_G6, 10);
-                if (state->color == 0) watch_set_led_red();
-                else if (state->color == 1) watch_set_led_green();
-                else watch_set_led_yellow();
-                delay_ms(700);
-                watch_buzzer_play_note(BUZZER_NOTE_G7, 10);
-                watch_set_led_off();
+                if (state->ticks == state->beat_tick) {
+                    watch_buzzer_play_note(BUZZER_NOTE_G7, 10);
+                    //if (state->color == 0) watch_set_led_red();
+                    //else if (state->color == 1) watch_set_led_green();
+                    //else watch_set_led_yellow();
+                    //watch_buzzer_play_note(BUZZER_NOTE_G7, 10);
+                    state->ticks = 1;
+                    //delay_ms(30);
+                 } else {
+                   //watch_set_led_off();
+
+                }
+                state->ticks++;
             }
             break;
         case EVENT_TIMEOUT:
