@@ -46,7 +46,7 @@ static uint8_t _calculate_beat_tick(metronome_face_state_t *state) {
 void metronome_face_activate(movement_settings_t *settings, void *context) {
     (void) settings;
     metronome_face_state_t *state = (metronome_face_state_t *)context;
-    state->bpm = 120;
+    state->bpm = 111;
     state->ticks = 1;
     state->beat_tick = _calculate_beat_tick(state);
     state->active = false;
@@ -55,9 +55,7 @@ void metronome_face_activate(movement_settings_t *settings, void *context) {
 
 static void _metronome_face_update_lcd(metronome_face_state_t *state) {
     char buf[11];
-    //const char colors[][7] = {" red  ", " Green", " Yello"};
-    //sprintf(buf, "BL %s", colors[state->color]);
-    sprintf(buf, "--  %i", state->bpm);
+    sprintf(buf, "44  %i ", state->bpm);
     watch_display_string(buf, 0);
 }
 
@@ -95,15 +93,8 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
             if (state->active) {
                 if (state->ticks == state->beat_tick) {
                     watch_buzzer_play_note(BUZZER_NOTE_G7, 10);
-                    //if (state->color == 0) watch_set_led_red();
-                    //else if (state->color == 1) watch_set_led_green();
-                    //else watch_set_led_yellow();
-                    //watch_buzzer_play_note(BUZZER_NOTE_G7, 10);
+                    //watch_buzzer_play_note(BUZZER_NOTE_G6, 10);
                     state->ticks = 1;
-                    //delay_ms(30);
-                 } else {
-                   //watch_set_led_off();
-
                 }
                 state->ticks++;
             }
@@ -122,5 +113,4 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
 void metronome_face_resign(movement_settings_t *settings, void *context) {
     (void) settings;
     (void) context;
-    watch_set_led_off();
 }
