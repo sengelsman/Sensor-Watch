@@ -39,23 +39,27 @@ void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_inde
     }
 }
 
-static uint8_t _calculate_beat_tick(metronome_face_state_t *state) {
+static uint8_t _metronome_face_calculate_beat_tick(metronome_face_state_t *state) {
     return (uint8_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60)));
 }
 
 void metronome_face_activate(movement_settings_t *settings, void *context) {
     (void) settings;
     metronome_face_state_t *state = (metronome_face_state_t *)context;
-    state->bpm = 111;
+    state->bpm = 120;
     state->ticks = 1;
-    state->beat_tick = _calculate_beat_tick(state);
+    state->beat_tick = _metronome_face_calculate_beat_tick(state);
+    state->counter = 0;
     state->active = false;
 }
 
-
 static void _metronome_face_update_lcd(metronome_face_state_t *state) {
     char buf[11];
-    sprintf(buf, "44  %i ", state->bpm);
+    if (state->active) {
+        sprintf(buf, "ME--%i ", state->bpm);
+    } else {
+        sprintf(buf, "ME  %i ", state->bpm);
+    }
     watch_display_string(buf, 0);
 }
 
@@ -68,32 +72,45 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
             _metronome_face_update_lcd(state);
             break;
         case EVENT_LIGHT_BUTTON_DOWN:
-            state->bpm--;
-            state->beat_tick = _calculate_beat_tick(state);
-            _metronome_face_update_lcd(state);
             break;
-        case EVENT_ALARM_BUTTON_UP:
+        case EVENT_LIGHT_BUTTON_UP:
             state->bpm++;
-            state->beat_tick = _calculate_beat_tick(state);
+            state->beat_tick = _metronome_face_calculate_beat_tick(state);
             _metronome_face_update_lcd(state);
             break;
-        case EVENT_ALARM_LONG_PRESS:
+        case EVENT_LIGHT_LONG_PRESS:
+            state->bpm += -10;
+            state->beat_tick = _metronome_face_calculate_beat_tick(state);
+            _metronome_face_update_lcd(state);
+            break;
+       case EVENT_ALARM_BUTTON_UP:
             if (!state->active) {
                 state->active = true;
                 movement_request_tick_frequency(METRONOME_TICK_FREQUENCY); 
                 _metronome_face_update_lcd(state);
             } else {
                 state->active = false;
-                //watch_set_led_off();
+                state->counter = 0;
+                state->ticks = 1;
                 _metronome_face_update_lcd(state);
             }
-
             break;
-        case EVENT_TICK:
+        case EVENT_ALARM_LONG_PRESS:
+            state->bpm += 10;
+            state->beat_tick = _metronome_face_calculate_beat_tick(state);
+            _metronome_face_update_lcd(state);
+            break;
+       case EVENT_TICK:
             if (state->active) {
                 if (state->ticks == state->beat_tick) {
-                    watch_buzzer_play_note(BUZZER_NOTE_G7, 10);
-                    //watch_buzzer_play_note(BUZZER_NOTE_G6, 10);
+                    if (state->counter == 0) {
+                        watch_buzzer_play_note(BUZZER_NOTE_G7, 20);
+                    } else {
+                        watch_buzzer_play_note(BUZZER_NOTE_G6, 20);
+                    }
+                    
+                    state->counter++;
+                    if (state->counter == 4) state->counter = 0;
                     state->ticks = 1;
                 }
                 state->ticks++;
