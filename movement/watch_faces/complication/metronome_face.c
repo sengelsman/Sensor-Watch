@@ -40,14 +40,14 @@ void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_inde
 }
 
 static uint8_t _metronome_face_calculate_beat_tick(metronome_face_state_t *state) {
-    return (uint8_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60)));
+    return (uint8_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60))) -1;
 }
 
 void metronome_face_activate(movement_settings_t *settings, void *context) {
     (void) settings;
     metronome_face_state_t *state = (metronome_face_state_t *)context;
-    state->bpm = 120;
-    state->ticks = 1;
+    state->bpm = 89;
+    state->ticks = 0;
     state->beat_tick = _metronome_face_calculate_beat_tick(state);
     state->counter = 0;
     state->active = false;
@@ -56,7 +56,7 @@ void metronome_face_activate(movement_settings_t *settings, void *context) {
 static void _metronome_face_update_lcd(metronome_face_state_t *state) {
     char buf[11];
     if (state->active) {
-        sprintf(buf, "ME--%i ", state->bpm);
+        sprintf(buf, "ME- %i ", state->bpm);
     } else {
         sprintf(buf, "ME  %i ", state->bpm);
     }
@@ -91,7 +91,7 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
             } else {
                 state->active = false;
                 state->counter = 0;
-                state->ticks = 1;
+                state->ticks = 0;
                 _metronome_face_update_lcd(state);
             }
             break;
@@ -103,6 +103,7 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
        case EVENT_TICK:
             if (state->active) {
                 if (state->ticks == state->beat_tick) {
+                    printf("state->beat_tick: %d - event.subsecond: %d\n", state->beat_tick,event.subsecond);
                     if (state->counter == 0) {
                         watch_buzzer_play_note(BUZZER_NOTE_G7, 20);
                     } else {
@@ -111,7 +112,7 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
                     
                     state->counter++;
                     if (state->counter == 4) state->counter = 0;
-                    state->ticks = 1;
+                    state->ticks = 0;
                 }
                 state->ticks++;
             }
