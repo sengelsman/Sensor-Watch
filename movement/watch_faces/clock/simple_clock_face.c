@@ -48,7 +48,9 @@ void simple_clock_face_setup(movement_settings_t *settings, uint8_t watch_face_i
 
 void simple_clock_face_activate(movement_settings_t *settings, void *context) {
     simple_clock_state_t *state = (simple_clock_state_t *)context;
-
+    
+    settings->bit.clock_mode_24h = true;
+    
     if (watch_tick_animation_is_running()) watch_stop_tick_animation();
 
     if (settings->bit.clock_mode_24h) watch_set_indicator(WATCH_INDICATOR_24H);
