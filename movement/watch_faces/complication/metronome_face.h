@@ -22,30 +22,30 @@
  * SOFTWARE.
  */
 
-#ifndef MOVEMENT_CONFIG_H_
-#define MOVEMENT_CONFIG_H_
+#ifndef METRONOME_FACE_H_
+#define METRONOME_FACE_H_
 
-#include "movement_faces.h"
+#include "movement.h"
 
-const watch_face_t watch_faces[] = {
-    simple_clock_face,
-    thermistor_readout_face,
-	metronome_face,
-    stock_stopwatch_face,
-	alarm_face,
-	voltage_face,
-	blinky_face,
-    preferences_face,
-    set_time_face,
-};
+typedef struct {
+    bool active;
+    uint8_t bpm;
+    uint8_t ticks;
+    uint8_t beat_tick;
+    uint8_t counter;
+} metronome_face_state_t;
 
-#define MOVEMENT_NUM_FACES (sizeof(watch_faces) / sizeof(watch_face_t))
+void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr);
+void metronome_face_activate(movement_settings_t *settings, void *context);
+bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, void *context);
+void metronome_face_resign(movement_settings_t *settings, void *context);
 
-/* Determines what face to go to from the first face if you've already set 
- * a mode long press to go to the first face in preferences, and
- * excludes these faces from the normal rotation.
- * Usually it makes sense to set this to the preferences face.
- */
-#define MOVEMENT_SECONDARY_FACE_INDEX 0 // or (MOVEMENT_NUM_FACES - 2)
+#define metronome_face ((const watch_face_t){ \
+    metronome_face_setup, \
+    metronome_face_activate, \
+    metronome_face_loop, \
+    metronome_face_resign, \
+    NULL, \
+})
 
-#endif // MOVEMENT_CONFIG_H_
+#endif // METRONOME_FACE_H_
