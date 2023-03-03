@@ -30,11 +30,12 @@
 const watch_face_t watch_faces[] = {
     simple_clock_face,
     thermistor_readout_face,
+    thermistor_logging_face,
+    ratemeter_face,
 	metronome_face,
     stock_stopwatch_face,
 	alarm_face,
 	voltage_face,
-	blinky_face,
     preferences_face,
     set_time_face,
 };

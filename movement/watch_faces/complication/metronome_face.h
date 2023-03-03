@@ -31,7 +31,7 @@ typedef struct {
     bool active;
     uint8_t bpm;
     uint8_t ticks;
-    uint8_t beat_tick;
+    uint8_t beat_interval;
     uint8_t counter;
 } metronome_face_state_t;
 
