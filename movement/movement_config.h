@@ -33,7 +33,6 @@ const watch_face_t watch_faces[] = {
     thermistor_logging_face,
     ratemeter_face,
 	metronome_face,
-    stock_stopwatch_face,
 	alarm_face,
 	voltage_face,
     preferences_face,
