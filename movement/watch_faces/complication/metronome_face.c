@@ -42,8 +42,8 @@ void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_inde
     }
 }
 
-static uint8_t _metronome_face_calculate_beat_tick(metronome_face_state_t *state) {
-    return (uint8_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60)));
+static int16_t _metronome_face_calculate_beat_tick(metronome_face_state_t *state) {
+    return (int16_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60)));
 }
 
 void metronome_face_activate(movement_settings_t *settings, void *context) {
