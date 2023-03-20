@@ -29,10 +29,10 @@
 
 typedef struct {
     bool active;
-    uint8_t bpm;
-    uint8_t ticks;
-    uint8_t beat_tick;
-    uint8_t counter;
+    int16_t bpm;
+    int16_t ticks;
+    int16_t beat_interval;
+    int16_t counter;
 } metronome_face_state_t;
 
 void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr);

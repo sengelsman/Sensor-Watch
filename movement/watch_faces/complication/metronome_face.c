@@ -30,8 +30,8 @@
 
 #define METRONOME_TICK_FREQUENCY 64
 
-static const int8_t _sound_first_beat[] = {BUZZER_NOTE_G7, 5, 0};
-static const int8_t _sound_beat[] = {BUZZER_NOTE_G6, 5, 0};
+static const int8_t _sound_first_beat[] = {BUZZER_NOTE_G7, 1, 0};
+static const int8_t _sound_beat[] = {BUZZER_NOTE_G6, 1, 0};
 
 void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
     (void) settings;
@@ -42,8 +42,8 @@ void metronome_face_setup(movement_settings_t *settings, uint8_t watch_face_inde
     }
 }
 
-static uint8_t _metronome_face_calculate_beat_tick(metronome_face_state_t *state) {
-    return (uint8_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60)))-1;
+static int16_t _metronome_face_calculate_beat_tick(metronome_face_state_t *state) {
+    return (int16_t)roundf((METRONOME_TICK_FREQUENCY / ((float)state->bpm / 60)));
 }
 
 void metronome_face_activate(movement_settings_t *settings, void *context) {
@@ -51,7 +51,7 @@ void metronome_face_activate(movement_settings_t *settings, void *context) {
     metronome_face_state_t *state = (metronome_face_state_t *)context;
     state->bpm = 120;
     state->ticks = 0;
-    state->beat_tick = _metronome_face_calculate_beat_tick(state);
+    state->beat_interval = _metronome_face_calculate_beat_tick(state);
     state->counter = 0;
     state->active = false;
 }
@@ -78,12 +78,12 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
             break;
         case EVENT_LIGHT_BUTTON_UP:
             state->bpm++;
-            state->beat_tick = _metronome_face_calculate_beat_tick(state);
+            state->beat_interval = _metronome_face_calculate_beat_tick(state);
             _metronome_face_update_lcd(state);
             break;
         case EVENT_LIGHT_LONG_PRESS:
             state->bpm += -10;
-            state->beat_tick = _metronome_face_calculate_beat_tick(state);
+            state->beat_interval = _metronome_face_calculate_beat_tick(state);
             _metronome_face_update_lcd(state);
             break;
        case EVENT_ALARM_BUTTON_UP:
@@ -101,26 +101,30 @@ bool metronome_face_loop(movement_event_t event, movement_settings_t *settings, 
             break;
         case EVENT_ALARM_LONG_PRESS:
             state->bpm += 10;
-            state->beat_tick = _metronome_face_calculate_beat_tick(state);
+            state->beat_interval = _metronome_face_calculate_beat_tick(state);
             _metronome_face_update_lcd(state);
             break;
        case EVENT_TICK:
+            //if (event.subsecond > 0) printf("event.subsecond: %d\n", event.subsecond);
             if (state->active) {
-                    //printf("state->beat_tick: %d - state->ticks: %d - event.subsecond: %d\n", state->beat_tick, state->ticks, event.subsecond);
-                if (state->ticks == state->beat_tick) {
-                    if (state->counter == 0) {
-                        // Non UI blocking function to play buzzer sequences
-                        watch_buzzer_play_sequence((int8_t *)_sound_first_beat, NULL);
-                        //watch_buzzer_play_note(BUZZER_NOTE_G7, 16);
-                    } else {
-                        watch_buzzer_play_sequence((int8_t *)_sound_beat, NULL);
-                        //watch_buzzer_play_note(BUZZER_NOTE_G6, 16);
-                    }
-                    state->ticks = 0;
-                    state->counter++;
-                    if (state->counter == 4) state->counter = 0;
-                }
+                    //printf("state->beat_interval: %d - state->ticks: %d - event.subsecond: %d\n", state->beat_interval, state->ticks, event.subsecond);
                 state->ticks++;
+                if (state->ticks == 1) {
+                    if (state->counter != 0) {
+                        // Non UI blocking function to play buzzer sequences
+                        watch_buzzer_play_sequence((int8_t *)_sound_beat, NULL);
+                    } else {       
+                        watch_buzzer_play_sequence((int8_t *)_sound_first_beat, NULL);
+                    }
+                    state->counter++;
+                } else {
+                    if (state->ticks == state->beat_interval) {
+                        state->ticks = 0;
+                    }
+                if (state->counter == 4) {
+                    state->counter = 0;
+                    }
+                }
             }
             break;
         case EVENT_TIMEOUT:
